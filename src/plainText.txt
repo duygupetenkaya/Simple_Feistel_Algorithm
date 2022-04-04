@@ -1,0 +1,13 @@
+Due to light scattering and absorption
+while traveling through water,
+underwater images become hazy and
+loose critical information resulting
+in poor contrast and color performance.
+Hence, it is difficult to see
+the difference between foreground colors
+and items, and to differentiate the
+background in these images. To solve these
+issues, this study proposes a novel technique
+for single underwater image enhancement which
+is based on the recovery of the lost red-channel
+via a weighted multi-scale fusion.
