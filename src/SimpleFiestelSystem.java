@@ -1,25 +1,14 @@
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class SimpleFiestelSystem {
-    static final int blockSize = 8;
     //FIXED VARIABLES FOR FEISTEL CIPHER
     static final int[] IP = {6, 4, 2, 8, 7, 5, 3, 1};
-    static final int[] reverseIP = {1,3,5,7,8,2,4,6};
+    static final int[] reverseIP = {1, 3, 5, 7, 8, 2, 4, 6};
     static HashMap<Character, Integer> encodingTable;
     static String key = "BD";
-    static ArrayList<String> blocks = new ArrayList<>();
-    static ArrayList<String> initiallyPermutatedBlocks = new ArrayList<>();
-    static ArrayList<String> encodedBlocks = new ArrayList<>();
-    static ArrayList<String> shiftedBlocks = new ArrayList<>();
-    static ArrayList<String> leftNibbles = new ArrayList<>();
-    static ArrayList<String> rightNibbles = new ArrayList<>();
-    static ArrayList<String> mergedNibbleBlocks = new ArrayList<>();
-    static ArrayList<String> reversePermutatedBlocks = new ArrayList<>();
-
+    static String[] subKeys;
+    static int[][] keyMatrix;
 
     public static void createAlphabet() {
         encodingTable = new HashMap<>();
@@ -116,73 +105,16 @@ public class SimpleFiestelSystem {
     }
 
 
-    // Step 1- Your code will read a plaintext from a file block-by-block with block size of 8 characters
-    public static void readTextFileBlockByBlock(String filename) {
-        String inputFileString;
-        try {
-            FileInputStream file = new FileInputStream(filename);
-            Scanner sc = new Scanner(file);
-
-            // to know end of the text
-            sc.useDelimiter("\\Z");
-
-            while (sc.hasNextLine()) {
-                inputFileString = sc.next();
-
-                // to change whitespaces with underscore
-                inputFileString = inputFileString.toLowerCase().replaceAll("\\s+", "_");
-
-                //if length of the string is less than 8 bits, add zeros until the length is 8 bits.
-                if (inputFileString.length() % blockSize != 0) {
-                    while (inputFileString.length() % blockSize != 0) {
-                        inputFileString = inputFileString + "0";
-                    }
-                }
-
-                int index = 0;
-
-                // to add each 8 characters as a block to ArrayList of blocks
-                while (index < inputFileString.length()) {
-                    blocks.add(inputFileString.substring(index, Math.min(index + 8, inputFileString.length())));
-                    index += 8;
-                }
-
-            }
-            sc.close();
-
-        } catch (FileNotFoundException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
-        }
-
-
-    }
-
     // Step 2- A permutation code of length 8 is chosen to be IP . The 8-character text
     //blocks will be permutated by using the initial permutation (IP) code
 
     public static String permutateStringBlocks(String block, int[] IP) {
-        String permutatedString = "";
+        char[] perm = block.toCharArray();
+        StringBuilder permutationBuilder = new StringBuilder();
         for (int i = 0; i < IP.length; i++) {
-            permutatedString += block.charAt(IP[i] - 1);
+            permutationBuilder.append(perm[IP[i] - 1]);
         }
-        return permutatedString;
-    }
-
-
-
-    // Step 3- Use either BINARY values of characters from Table 1 to encode characters so that each
-    //character will be 8 bits of length.
-    public static String encodeToBinary(String blockToEncode) {
-        StringBuilder encodingBuilder = new StringBuilder();
-        char[] chars = blockToEncode.toCharArray();
-
-        for (char aChar : chars) {
-            if (encodingTable.get(aChar) != null)
-                encodingBuilder.append(String.format("%8s", Integer.toBinaryString(encodingTable.get(aChar))).replaceAll(" ", "0"));
-        }
-
-        return encodingBuilder.toString();
+        return permutationBuilder.toString();
     }
 
     // Step 4- Perform a Shift-right-rotate operation that shift and rotate 4 positions to right  on the encoded characters.
@@ -215,8 +147,9 @@ public class SimpleFiestelSystem {
 
         }
 
-        return new String[]{String.valueOf(right), String.valueOf(left)};
+        return new String[]{left.toString(), right.toString()};
     }
+
 
     // Step 6- Choose a 16-bit (2 characters) key and convert them to 16 bits,
     // and put the bits into a 4x4 matrix(table)
@@ -320,15 +253,16 @@ public class SimpleFiestelSystem {
         return subKeys;
     }
 
-    // Step 11-Helper: Merge xor'd left and right nibbles of the input string to generate the output string.
+    // Function that merges nibbles
     public static ArrayList<String> mergeNibbles(ArrayList<String> left, ArrayList<String> right) {
-
+        ArrayList<String> merged = new ArrayList<>();
         for (int i = 0; i < left.size(); i++) {
-            String mergedNibbles = "";
-            mergedNibbles = left.get(i) + right.get(i);
-            mergedNibbleBlocks.add(mergedNibbles);
+            StringBuilder sb = new StringBuilder();
+            sb.append(left.get(i));
+            sb.append(right.get(i));
+            merged.add(sb.toString());
         }
-        return mergedNibbleBlocks;
+        return merged;
     }
 
     public static String mergeBlocks(ArrayList<String> blocks) {
@@ -339,163 +273,6 @@ public class SimpleFiestelSystem {
         return mergedBlocksBuilder.toString();
     }
 
-    public static void writeCipheredTextToFile(String cipheredText) {
-        try {
-            FileWriter fw = new FileWriter("src//cipheredText.txt");
-            fw.write(cipheredText);
-            fw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void encryptionFunction() {
-        System.out.println("Original Blocks:");
-        System.out.println(blocks);
-
-        for (String block : blocks) {
-            initiallyPermutatedBlocks.add(permutateStringBlocks(block, IP));
-        }
-        System.out.println("Initially Permutated Blocks: ");
-        System.out.println(initiallyPermutatedBlocks);
-
-        for (String block : initiallyPermutatedBlocks) {
-            encodedBlocks.add(encodeToBinary(block));
-        }
-
-        System.out.println("Encoded Blocks:");
-        System.out.println(encodedBlocks.toString());
-
-        for (String block : encodedBlocks) {
-            shiftedBlocks.add(shiftRightRotate(block, 4));
-        }
-        System.out.println("Shifted Blocks:");
-        System.out.println(shiftedBlocks);
-
-        int[][] keyMatrix = keyToBitMatrix();
-        System.out.println("Key Matrix: " + Arrays.deepToString(keyMatrix));
-
-        String[] subKeys = generateSubKeys(keyMatrix);
-        // k2 = subkeys[0] , k3 = subkeys[1] , k4 = subkeys[2] , k5 = subkeys[3]
-        System.out.println("Subkeys: " + Arrays.deepToString(subKeys));
-
-
-        for (String block : shiftedBlocks) {
-            String[] blocks = createNibbles(block);
-
-            leftNibbles.add(blocks[1]);
-            rightNibbles.add(blocks[0]);
-        }
-
-
-        System.out.println("Left Nibbles: " + "size: " + leftNibbles.size());
-        System.out.println(leftNibbles);
-        System.out.println("Right Nibbles: " + "size: " + rightNibbles.size());
-        System.out.println(rightNibbles);
-
-
-        String xordLeft = "";
-        String xordRight = "";
-
-        // Step 9
-        for (int i = 0, j = 0; i < leftNibbles.size() && j < rightNibbles.size(); i++, j++) {
-            String left = "";
-            for (int indexLeft = 0; indexLeft < leftNibbles.get(i).length(); indexLeft += 8) {
-                String leftNibble = leftNibbles.get(i).substring(indexLeft, indexLeft + 8);
-                String key3 = subKeys[1];
-                xordLeft = xorFunc(leftNibble, key3);
-                left += xordLeft;
-            }
-            String right = "";
-            for (int indexRight = 0; indexRight < rightNibbles.get(i).length(); indexRight += 8) {
-                String rightNibble = rightNibbles.get(j).substring(indexRight, indexRight + 8);
-                String key2 = subKeys[0];
-                xordRight = xorFunc(rightNibble, key2);
-                right += xordRight;
-            }
-
-            String temp = left;
-            left = right;
-            right = temp;
-
-            leftNibbles.set(i, left);
-            rightNibbles.set(j, right);
-        }
-        System.out.println("Round 1");
-        System.out.println("Left Nibbles after XOR: " + leftNibbles);
-        System.out.println("Right Nibbles after XOR: " + rightNibbles);
-
-//Step 10
-        for (int i = 0, j = 0; i < leftNibbles.size() && j < rightNibbles.size(); i++, j++) {
-            String left = "";
-            for (int indexLeft = 0; indexLeft < leftNibbles.get(i).length(); indexLeft += 8) {
-                String leftNibble = leftNibbles.get(i).substring(indexLeft, indexLeft + 8);
-                String key3 = subKeys[1];
-                xordLeft = xorFunc(leftNibble, key3);
-                left += xordLeft;
-            }
-
-            String right = "";
-            for (int indexRight = 0; indexRight < rightNibbles.get(i).length(); indexRight += 8) {
-                String rightNibble = rightNibbles.get(j).substring(indexRight, indexRight + 8);
-                String key2 = subKeys[0];
-                xordRight = xorFunc(rightNibble, key2);
-                right += xordRight;
-            }
-            String temp = left;
-            left = right;
-            right = temp;
-
-            leftNibbles.set(i, left);
-            rightNibbles.set(j, right);
-        }
-        System.out.println("Round 2");
-
-        System.out.println("Left Nibbles after XOR: " + leftNibbles);
-        System.out.println("Right Nibbles after XOR: " + rightNibbles);
-        // Step 11
-        mergedNibbleBlocks = mergeNibbles(leftNibbles, rightNibbles);
-
-        System.out.println("Merged Nibbles: ");
-        System.out.println(mergedNibbleBlocks);
-
-
-        for (String block : mergedNibbleBlocks) {
-            String permutationBlocks = "";
-
-            for (int i = 0; i < block.length(); i += 8) {
-                String blockToBeReverselyPermuted = block.substring(i, i + 8);
-                String permuted = permutateStringBlocks(blockToBeReverselyPermuted,reverseIP);
-                permutationBlocks += permuted;
-            }
-            reversePermutatedBlocks.add(permutationBlocks);
-        }
-
-        System.out.println("Reverse Permutated Blocks as Ciphered Blocks: ");
-        System.out.println(reversePermutatedBlocks);
-
-        String cipheredText = mergeBlocks(reversePermutatedBlocks);
-        System.out.println("Ciphered Text: " + cipheredText);
-
-        writeCipheredTextToFile(cipheredText);
-
-    }
-
-
-    public static String readCipheredTextFromFile(String cipheredText) {
-        String cipheredTextString = "";
-        try {
-            FileInputStream file = new FileInputStream(cipheredText);
-            Scanner sc = new Scanner(file);
-            sc.useDelimiter("\\Z");
-             cipheredTextString = sc.next();
-            sc.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return cipheredTextString;
-
-    }
 
     public static ArrayList<String> splitBlocks(String text) {
         ArrayList<String> blocks = new ArrayList<>();
@@ -509,35 +286,26 @@ public class SimpleFiestelSystem {
 
     public static void main(String[] args) {
         createAlphabet();
-        readTextFileBlockByBlock("src/plainText.txt");
 
-        encryptionFunction();
+        keyMatrix = keyToBitMatrix();
 
-        String cipheredText=readCipheredTextFromFile("src/cipheredText.txt");
+        // k2 = subkeys[0] , k3 = subkeys[1] , k4 = subkeys[2] , k5 = subkeys[3]
+        subKeys = generateSubKeys(keyMatrix);
+
+
+        System.out.println("Encrpytion Part ");
+        Encryption.encryptionFunction("src/plainText.txt");
         System.out.println("\n");
+        System.out.println("Decrpytion Part ");
 
-        ArrayList<String> cipheredBlocks=splitBlocks(cipheredText);
-        System.out.println("Ciphered Blocks (should be equal to reverse permutated blocks): " + cipheredBlocks);
+        Decryption.decryptionFunction("src/cipheredText.txt");
 
-        ArrayList<String> mergedNibblesDecipher= new ArrayList<String>();
-
-        reversePermutatedBlocks.clear();
-        for (String block : cipheredBlocks) {
-            String permutationBlocks = "";
-
-            for (int i = 0; i < block.length(); i += 8) {
-                String blockToBeReverselyPermuted = block.substring(i, i + 8);
-                String permuted = permutateStringBlocks(blockToBeReverselyPermuted,reverseIP );
-                permutationBlocks += permuted;
-            }
-            reversePermutatedBlocks.add(permutationBlocks);
-            mergedNibblesDecipher.add(permutationBlocks);
-        }
-
-        System.out.println("Reverse Permutated Blocks(should be equal to merged blocks): ");
-        System.out.println(mergedNibblesDecipher);
 
     }
 
+
 }
+
+
+
 
