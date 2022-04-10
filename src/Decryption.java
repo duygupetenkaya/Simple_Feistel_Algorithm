@@ -57,7 +57,7 @@ public class Decryption {
         String removePadding = textBlocks.get(textBlocks.size() - 1).replaceAll("0", "");
         textBlocks.set(textBlocks.size() - 1, removePadding);
         for (String block : textBlocks) {
-            block = block.toLowerCase().replaceAll("_", " ");
+            block = block.replaceAll("_", " ");
             textBlocksToWrite.add(block);
         }
         return textBlocksToWrite;

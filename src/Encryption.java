@@ -23,7 +23,7 @@ public class Encryption {
                 inputFileString = sc.next();
 
                 // to change whitespaces with underscore
-                inputFileString = inputFileString.toLowerCase().replaceAll("\\s+", "_");
+                inputFileString = inputFileString.replaceAll("\\s+", "_");
 
                 //if length of the string is less than 8 bits, add zeros until the length is 8 bits.
                 if (inputFileString.length() % 8 != 0) {
